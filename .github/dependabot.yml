@@ -4,6 +4,10 @@ updates:
     directory: "/"
     schedule:
       interval: weekly
+    groups:
+      testcontainers:
+        patterns:
+          - "github.com/testcontainers/testcontainers-go*"
 
   - package-ecosystem: github-actions
     directory: "/"

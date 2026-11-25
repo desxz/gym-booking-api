@@ -100,7 +100,7 @@ cost between 10 and 14.
 
 ## Quickstart & End-to-End Demo
 
-Requires Go 1.25+ to build from source (`go.mod`); CI and the Docker image use
+Requires Go 1.26+ to build from source (`go.mod`); CI and the Docker image use
 Go 1.26. Docker and `make` are enough for the compose demo.
 
 ```bash

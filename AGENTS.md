@@ -4,7 +4,7 @@ Binding instructions for AI agents. Product behavior is documented in `README.md
 
 ## 1. Project Scope & Dependency Guardrails
 
-- Go 1.25.0 minimum (`go.mod`); CI and Docker build with Go 1.26.
+- Go 1.26.0 minimum (`go.mod`); CI and Docker build with Go 1.26.
 - Module: `github.com/muratgun/gym-booking-api`; packages are `cmd/api` plus `internal/{auth,config,domain,httpapi,repository,service}`.
 - Production dependencies are exactly four: `github.com/jackc/pgx/v5`, `golang.org/x/crypto`, `github.com/golang-jwt/jwt/v5`, `gopkg.in/yaml.v3`.
 - Test-only dependencies are exactly three: `github.com/testcontainers/testcontainers-go` (including `modules/postgres`), `go.uber.org/mock`, `github.com/stretchr/testify`.

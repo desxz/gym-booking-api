@@ -19,32 +19,29 @@ jobs:
           go-version: "1.26.x"
           cache: true
 
-      - name: Vet
-        run: go vet ./...
-
       - name: Generate mocks
-        run: |
-          go generate ./...
-          git diff --exit-code
+        run: make generate-check
+
+      - name: Format
+        run: make fmt
+
+      - name: Vet
+        run: make vet
 
       - name: Production dependency purity
-        run: |
-          if go list -deps ./cmd/api | grep -E 'testify|uber\.org/mock|testcontainers'; then
-            echo "test-only dependency leaked into the production binary" >&2
-            exit 1
-          fi
+        run: make check-prod-deps
 
-      - name: Coverage gate (100.0% required on core packages)
-        run: |
-          go test -short -race -coverprofile=coverage.out ./internal/domain ./internal/auth ./internal/config ./internal/service ./internal/httpapi
-          go tool cover -func=coverage.out | tee coverage.txt
-          grep -q 'total:.*100.0%' coverage.txt
+      - name: Coverage gate
+        run: make cover
 
-      - name: Test (unit, HTTP, and Testcontainers integration)
-        run: go test -race -shuffle=on -v ./...
+      - name: Flakiness
+        run: make test-flake
+
+      - name: Integration tests
+        run: make test-integration
 
       - name: Install govulncheck
         run: go install golang.org/x/vuln/cmd/govulncheck@latest
 
       - name: Vulnerability scan
-        run: govulncheck ./...
+        run: make vuln

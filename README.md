@@ -101,16 +101,16 @@ cost between 10 and 14.
 ## Quickstart & End-to-End Demo
 
 Requires Go 1.25+ to build from source (`go.mod`); CI and the Docker image use
-Go 1.26. Docker alone is enough for the compose demo.
+Go 1.26. Docker and `make` are enough for the compose demo.
 
 ```bash
 cp .env.example .env
-docker compose up --build
+make up
 ```
 
 The API listens on `http://localhost:8080`; PostgreSQL is seeded by
 `migrations/001_init.sql`. Every demo account's password is `Password123!`.
-Reset the database with `docker compose down -v`.
+Stop with `make down`; reset all data with `make down-v`.
 
 ```bash
 curl -sS localhost:8080/healthz   # {"status":"ok"}
@@ -197,22 +197,18 @@ curl -sS -X POST http://localhost:8080/api/v1/auth/register \
 ## Running Tests
 
 Mocks are generated with `go.uber.org/mock` (`mockgen`) and live only in
-`mock_*_test.go` files. Regenerate them after changing a consumer-side interface:
+`mock_*_test.go` files. Regenerate them with `make generate`; `make generate-check`
+fails if generated mocks drift. `make check` includes that check, so run it with a
+clean working tree.
 
 ```bash
-go generate ./...
-```
-
-```bash
-# 100% statement coverage on the five core packages
-go test -short -race -coverprofile=coverage.out ./internal/domain ./internal/auth ./internal/config ./internal/service ./internal/httpapi
-go tool cover -func=coverage.out
-
-# Order-independent unit/HTTP tests
-go test -short -race -shuffle=on -count=5 ./internal/domain ./internal/auth ./internal/config ./internal/service ./internal/httpapi
-
-# Full suite: adds Testcontainers repository tests (Docker required)
-go test -race -shuffle=on -v ./...
+make generate          # Regenerate mocks after interface changes
+make test              # Fast unit + HTTP tests; no Docker
+make cover             # 100% coverage gate on the five core packages
+make test-flake        # Shuffled repeated core tests
+make test-integration  # Full suite including Testcontainers
+make check             # fmt + vet + prod purity + coverage + flake
+make help              # List every available target
 ```
 
 The repository suite skips gracefully under `-short` or when Docker is unavailable.
@@ -230,7 +226,7 @@ It proves, against a real `postgres:16-alpine`:
 Testcontainers is the only dependency that needs Docker. `go.uber.org/mock` and
 `github.com/stretchr/testify` are used strictly in `_test.go` files and generated
 `mock_*_test.go` mocks; no test dependency is compiled into the production binary
-(verified with `go list -deps ./cmd/api`).
+(verified by `make check-prod-deps`).
 
 ## Known Weak Spots & Trade-offs (What I Would Improve Next)
 
@@ -284,8 +280,8 @@ Review checklist:
 
 Zero-downtime deployment flow:
 
-1. Build and scan the image (CI runs `go vet`, race tests with coverage, and
-   `govulncheck`).
+1. Build and scan the image (CI runs the same Makefile verification targets,
+   including coverage, integration tests, and `make vuln`).
 2. Apply expand-contract migrations first: add nullable columns/tables, deploy code
    that writes both shapes, backfill, switch reads, then drop old shapes later.
 3. Roll out behind `/readyz`; a pod that cannot ping PostgreSQL never receives traffic.

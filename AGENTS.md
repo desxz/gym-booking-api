@@ -59,7 +59,7 @@ Dependencies point inward only. No new package may import a higher layer or crea
 
 ## 5. Testing & Flakiness Rules
 
-- Use `go.uber.org/mock`; regenerate via `go generate ./...` from the `//go:generate` directives. Output only `mock_*_test.go` in the package under test. Do not hand-write service/repository fakes.
+- Use `go.uber.org/mock`; regenerate via `make generate` from the `//go:generate` directives. Output only `mock_*_test.go` in the package under test. Do not hand-write service/repository fakes.
 - Never edit a generated mock by hand; change the consumer-side interface and regenerate.
 - Use `testify/require` for fatal preconditions and `testify/assert` for value/payload checks. Never use `testify/mock` or `testify/suite`.
 - Maintain 100.0% statement coverage on `internal/domain`, `internal/auth`, `internal/config`, `internal/service`, and `internal/httpapi`. New branches require tests.
@@ -77,14 +77,11 @@ Dependencies point inward only. No new package may import a higher layer or crea
 Run from the repo root; do not finish until every command passes with zero warnings.
 
 ```bash
-go generate ./...
 go mod tidy
-go vet ./...
-go list -deps ./cmd/api | grep -E "testify|uber\.org/mock|testcontainers" && exit 1 || echo "OK: prod binary is clean"
-go test -short -race -coverprofile=coverage.out ./internal/domain ./internal/auth ./internal/config ./internal/service ./internal/httpapi
-go tool cover -func=coverage.out   # total must be 100.0%
-go test -short -race -shuffle=on -count=5 ./internal/domain ./internal/auth ./internal/config ./internal/service ./internal/httpapi
-go test -race -shuffle=on -count=1 ./...
+make generate
+make check
+make test-integration
+make vuln
 ```
 
-Docker is required for the final command; `-short` skips Testcontainers. `go mod tidy` must leave the direct requirements unchanged (four production + three test-only module families).
+`make check` includes `generate-check`; run it with a clean working tree. Docker is required for `make test-integration`, and `make vuln` requires `govulncheck` on `PATH` (CI installs it). `go mod tidy` must leave the direct requirements unchanged (four production + three test-only module families).
